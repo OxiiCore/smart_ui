@@ -95,9 +95,43 @@ export default function Home() {
     loadFieldStatistics();
   }, []);
   
+  // Hàm chuyển đổi tên hiển thị cho các loại field
+  const getFieldTypeDisplayName = (fieldType: string): string => {
+    const displayNameMap: Record<string, string> = {
+      'TEXT': 'Văn bản',
+      'PARAGRAPH': 'Đoạn văn',
+      'NUMBER': 'Số',
+      'SINGLE_CHOICE': 'Lựa chọn đơn',
+      'MULTI_CHOICE': 'Lựa chọn nhiều',
+      'DATE': 'Ngày tháng',
+      'INPUT': 'Nhập liệu',
+      'CACHE': 'Bộ nhớ đệm',
+      'AUDIO_RECORD': 'Ghi âm',
+      'SCREEN_RECORD': 'Ghi màn hình',
+      'IMPORT': 'Nhập dữ liệu',
+      'EXPORT': 'Xuất dữ liệu',
+      'QR_SCAN': 'Quét QR',
+      'GPS': 'Vị trí GPS',
+      'CHOOSE': 'Chọn',
+      'SELECT': 'Chọn lựa',
+      'SEARCH': 'Tìm kiếm',
+      'FILTER': 'Lọc',
+      'DASHBOARD': 'Bảng điều khiển',
+      'PHOTO': 'Hình ảnh'
+    };
+    
+    return displayNameMap[fieldType] || fieldType;
+  };
+  
+  // Biến đổi dữ liệu để hiển thị tên thân thiện
+  const displayFieldStats = fieldStats.map(stat => ({
+    ...stat,
+    displayName: getFieldTypeDisplayName(stat.name)
+  }));
+
   return (
     <MainLayout title={t('app.title', 'Hệ thống Quản lý Form Động')}>
-      <div className="py-6 md:py-10">
+      <div className="p-6 md:p-8 max-w-[1400px] mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight">
             {t('home.dashboard', 'Thống kê sử dụng Form Fields')}
@@ -108,8 +142,8 @@ export default function Home() {
         </div>
         
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          <Card className="col-span-2">
-            <CardHeader>
+          <Card className="col-span-2 shadow-sm border">
+            <CardHeader className="pb-3">
               <CardTitle>{t('home.fieldTypeUsageChart', 'Biểu đồ tần suất sử dụng loại trường')}</CardTitle>
             </CardHeader>
             <CardContent className="h-[400px]">
@@ -124,23 +158,25 @@ export default function Home() {
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
-                    data={fieldStats}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 70 }}
+                    data={displayFieldStats}
+                    margin={{ top: 20, right: 10, left: 10, bottom: 70 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis 
-                      dataKey="name" 
+                      dataKey="displayName" 
                       angle={-45} 
                       textAnchor="end"
                       height={70}
                       interval={0}
+                      fontSize={12}
                     />
                     <YAxis />
                     <Tooltip 
-                      formatter={(value: number, name: string) => [
+                      formatter={(value: number, name: string, props: any) => [
                         `${value} trường (${Math.round((value / formFieldCount) * 100)}%)`,
                         'Số lượng'
                       ]}
+                      labelFormatter={(label) => `Loại: ${label}`}
                     />
                     <Legend />
                     <Bar 
@@ -149,7 +185,7 @@ export default function Home() {
                       fill="#00B1D2"
                       radius={[4, 4, 0, 0]}
                     >
-                      {fieldStats.map((entry, index) => (
+                      {displayFieldStats.map((entry, index) => (
                         <Cell 
                           key={`cell-${index}`} 
                           fill={FIELD_TYPE_COLORS[entry.name as keyof typeof FIELD_TYPE_COLORS] || '#00B1D2'} 
@@ -162,8 +198,8 @@ export default function Home() {
             </CardContent>
           </Card>
           
-          <Card>
-            <CardHeader>
+          <Card className="shadow-sm border">
+            <CardHeader className="pb-3">
               <CardTitle>{t('home.fieldTypeDistributionChart', 'Phân bố loại trường')}</CardTitle>
             </CardHeader>
             <CardContent className="h-[400px]">
@@ -179,17 +215,17 @@ export default function Home() {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={fieldStats.slice(0, 10)} // Chỉ hiển thị 10 loại field phổ biến nhất
+                      data={displayFieldStats.slice(0, 10)} // Chỉ hiển thị 10 loại field phổ biến nhất
                       cx="50%"
                       cy="50%"
                       labelLine={false}
                       outerRadius={120}
                       fill="#8884d8"
                       dataKey="value"
-                      nameKey="name"
-                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      nameKey="displayName"
+                      label={({ displayName, percent }) => `${displayName}: ${(percent * 100).toFixed(0)}%`}
                     >
-                      {fieldStats.slice(0, 10).map((entry, index) => (
+                      {displayFieldStats.slice(0, 10).map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                       ))}
                     </Pie>
@@ -198,6 +234,7 @@ export default function Home() {
                         `${value} trường (${Math.round((value / formFieldCount) * 100)}%)`,
                         'Số lượng'
                       ]}
+                      labelFormatter={(label) => `Loại: ${label}`}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -207,8 +244,8 @@ export default function Home() {
         </div>
         
         <div className="mt-8">
-          <Card>
-            <CardHeader>
+          <Card className="shadow-sm border">
+            <CardHeader className="pb-3">
               <CardTitle>{t('home.fieldUsageStatistics', 'Thống kê chi tiết tần suất sử dụng field')}</CardTitle>
             </CardHeader>
             <CardContent>
@@ -225,23 +262,23 @@ export default function Home() {
                   <table className="w-full">
                     <thead>
                       <tr>
-                        <th className="text-left p-2 bg-muted">{t('home.fieldType', 'Loại trường')}</th>
-                        <th className="text-left p-2 bg-muted">{t('home.count', 'Số lượng')}</th>
-                        <th className="text-left p-2 bg-muted">{t('home.percentage', 'Phần trăm')}</th>
+                        <th className="text-left p-3 bg-muted">{t('home.fieldType', 'Loại trường')}</th>
+                        <th className="text-left p-3 bg-muted">{t('home.count', 'Số lượng')}</th>
+                        <th className="text-left p-3 bg-muted">{t('home.percentage', 'Phần trăm')}</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {fieldStats.map((stat, index) => (
+                      {displayFieldStats.map((stat, index) => (
                         <tr key={index} className={index % 2 === 0 ? 'bg-muted/50' : ''}>
-                          <td className="p-2 font-medium">{stat.name}</td>
-                          <td className="p-2">{stat.value}</td>
-                          <td className="p-2">{stat.percent}%</td>
+                          <td className="p-3 font-medium">{stat.displayName}</td>
+                          <td className="p-3">{stat.value}</td>
+                          <td className="p-3">{stat.percent}%</td>
                         </tr>
                       ))}
                       <tr className="bg-muted font-bold">
-                        <td className="p-2">{t('home.total', 'Tổng cộng')}</td>
-                        <td className="p-2">{formFieldCount}</td>
-                        <td className="p-2">100%</td>
+                        <td className="p-3">{t('home.total', 'Tổng cộng')}</td>
+                        <td className="p-3">{formFieldCount}</td>
+                        <td className="p-3">100%</td>
                       </tr>
                     </tbody>
                   </table>
