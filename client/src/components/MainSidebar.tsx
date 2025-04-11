@@ -168,9 +168,9 @@ export function MainSidebar({ children }: { children: React.ReactNode }) {
     <SidebarProvider defaultOpen={true}>
       <div className={containerClass}>
         {/* Mobile Sidebar Trigger - Chỉ hiển thị trên mobile */}
-        <div className="fixed z-20 top-4 left-4 lg:hidden">
+        <div className="fixed z-50 top-[20px] left-4 lg:hidden">
           <SidebarTrigger>
-            <Button size="icon" variant="outline" className="shadow-sm hover:bg-primary/10 transition-colors">
+            <Button size="icon" variant="outline" className="shadow-sm hover:bg-primary/10 transition-colors bg-background">
               <Menu className="size-4" />
             </Button>
           </SidebarTrigger>
@@ -256,32 +256,8 @@ export function MainSidebar({ children }: { children: React.ReactNode }) {
                       // Đóng sidebar trên thiết bị di động sau khi click
                       if (window.innerWidth < 1024) {
                         setTimeout(() => {
-                          try {
-                            // Sử dụng cách tiếp cận đóng trực tiếp sidebar
-                            const sidebar = document.querySelector('[data-sidebar-content]');
-                            if (sidebar) {
-                              sidebar.setAttribute('data-sidebar-opened', 'false');
-                              // Cũng remove overlay nếu có
-                              const overlay = document.getElementById('sidebar-overlay');
-                              if (overlay) {
-                                overlay.classList.add('animate-out', 'fade-out-0');
-                                setTimeout(() => {
-                                  try {
-                                    overlay.remove();
-                                  } catch (err) {
-                                    console.error('Error removing overlay in home click:', err);
-                                  }
-                                }, 200);
-                              }
-                            }
-                          } catch (err) {
-                            console.error('Error closing sidebar in home click:', err);
-                            // Fallback - cố gắng loại bỏ overlay
-                            try {
-                              const overlay = document.getElementById('sidebar-overlay');
-                              if (overlay) overlay.remove(); 
-                            } catch (e) {}
-                          }
+                          // Sử dụng context để đóng sidebar
+                          mobileSidebar.close();
                         }, 100);
                       }
                     }}
