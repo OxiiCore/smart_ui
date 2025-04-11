@@ -690,25 +690,25 @@ export function SubmissionDataTable({
             <thead>
               <tr className="bg-muted/70 text-primary-foreground">
                 {/* Cố định cột code */}
-                <th className="sticky left-0 bg-muted/70 p-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-r border-border whitespace-nowrap z-10">
+                <th className="sticky left-0 bg-muted/70 p-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-r border-border whitespace-nowrap z-10 min-w-[120px] w-[120px]">
                   <div className="flex items-center">
                     <span className="inline-block normal-case">Code</span>
                   </div>
                 </th>
-                <th className="p-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-r border-border whitespace-nowrap">
+                <th className="p-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-r border-border whitespace-nowrap min-w-[150px] w-[150px]">
                   <div className="flex items-center">
                     <span className="inline-block normal-case">Trạng thái</span>
                   </div>
                 </th>
                 {fieldNames.map((fieldName: string) => (
-                  <th key={fieldName} className="p-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-r border-border whitespace-nowrap">
+                  <th key={fieldName} className="p-3 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-r border-border whitespace-nowrap min-w-[150px] w-[180px]">
                     <div className="flex items-center">
                       <span className="inline-block normal-case">{fieldName}</span>
                     </div>
                   </th>
                 ))}
                 {/* Cố định cột thao tác bên phải */}
-                <th className="sticky right-0 bg-muted/70 p-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-border whitespace-nowrap z-10">
+                <th className="sticky right-0 bg-muted/70 p-3 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wider border-b border-border whitespace-nowrap z-10 min-w-[100px] w-[100px]">
                   <div className="flex items-center justify-center">
                     <span className="inline-block normal-case">{t('actions.actions', 'Thao tác')}</span>
                   </div>
