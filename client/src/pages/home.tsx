@@ -1,110 +1,256 @@
-import React from 'react';
-import { Link } from 'wouter';
+import React, { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/MainLayout';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslation } from 'react-i18next';
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, 
+  Legend, ResponsiveContainer, PieChart, Pie, Cell
+} from 'recharts';
+import { fetchFieldUsageStatistics } from '@/lib/api';
+import { Skeleton } from '@/components/ui/skeleton';
+import { FormFieldStatistic, FieldUsageStatisticsResponse } from '@/lib/types';
+
+// Định nghĩa màu sắc cho các loại field
+const FIELD_TYPE_COLORS = {
+  TEXT: '#00B1D2',
+  PARAGRAPH: '#0088A9',
+  NUMBER: '#00D27F',
+  SINGLE_CHOICE: '#D2A800',
+  MULTI_CHOICE: '#D26400',
+  DATE: '#D20036',
+  INPUT: '#7A00D2',
+  CACHE: '#D200C2',
+  AUDIO_RECORD: '#4D00D2',
+  SCREEN_RECORD: '#008BD2',
+  IMPORT: '#00D2B1',
+  EXPORT: '#6AD200',
+  QR_SCAN: '#D2B100',
+  GPS: '#D27700',
+  CHOOSE: '#D25D00',
+  SELECT: '#D24B00',
+  SEARCH: '#D23500',
+  FILTER: '#D21E00',
+  DASHBOARD: '#D20700',
+  PHOTO: '#D200A3'
+};
+
+// Các màu bổ sung cho biểu đồ tròn
+const PIE_COLORS = [
+  '#00B1D2', '#0088A9', '#00D27F', '#D2A800', '#D26400',
+  '#D20036', '#7A00D2', '#D200C2', '#4D00D2', '#008BD2'
+];
 
 export default function Home() {
   const { t } = useTranslation();
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [fieldStats, setFieldStats] = useState<FormFieldStatistic[]>([]);
+  const [formFieldCount, setFormFieldCount] = useState<number>(0);
+  
+  useEffect(() => {
+    // Hàm tải dữ liệu thống kê về tần suất sử dụng field
+    async function loadFieldStatistics() {
+      try {
+        setLoading(true);
+        const response = await fetchFieldUsageStatistics();
+        
+        if (!response.data || !response.data.core_core_dynamic_form_fields) {
+          throw new Error('Không thể lấy dữ liệu thống kê từ API');
+        }
+        
+        const formFields = response.data.core_core_dynamic_form_fields;
+        
+        // Tính tổng số form field
+        setFormFieldCount(formFields.length);
+        
+        // Tính số lượng từng loại field
+        const fieldTypeCount: Record<string, number> = {};
+        
+        formFields.forEach((formField: any) => {
+          if (formField.core_dynamic_field && formField.core_dynamic_field.field_type) {
+            const fieldType = formField.core_dynamic_field.field_type;
+            fieldTypeCount[fieldType] = (fieldTypeCount[fieldType] || 0) + 1;
+          }
+        });
+        
+        // Chuyển đổi thành mảng để hiển thị trong biểu đồ
+        const fieldStatsData = Object.entries(fieldTypeCount).map(([fieldType, count]) => ({
+          name: fieldType,
+          value: count,
+          percent: Math.round((count / formFields.length) * 100)
+        }));
+        
+        // Sắp xếp theo số lượng từ cao đến thấp
+        fieldStatsData.sort((a, b) => b.value - a.value);
+        
+        setFieldStats(fieldStatsData);
+        setLoading(false);
+      } catch (err) {
+        console.error('Lỗi khi tải thống kê:', err);
+        setError(err instanceof Error ? err.message : 'Đã xảy ra lỗi khi tải thống kê');
+        setLoading(false);
+      }
+    }
+    
+    loadFieldStatistics();
+  }, []);
   
   return (
     <MainLayout title={t('app.title', 'Hệ thống Quản lý Form Động')}>
-      <div className="py-12">
-        <div className="max-w-3xl mx-auto text-center">
-          <h1 className="text-4xl font-extrabold sm:text-5xl sm:tracking-tight lg:text-6xl">
-            {t('app.title', 'Hệ thống Quản lý Form Động')}
+      <div className="py-6 md:py-10">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold tracking-tight">
+            {t('home.dashboard', 'Thống kê sử dụng Form Fields')}
           </h1>
-          <p className="mt-6 text-xl text-muted-foreground">
-            {t('home.description', 'Tạo, quản lý và gửi các biểu mẫu tùy chỉnh một cách nhanh chóng và dễ dàng.')}
+          <p className="mt-2 text-muted-foreground">
+            {t('home.dashboardDescription', 'Biểu đồ hiển thị tần suất sử dụng các loại trường dữ liệu trong hệ thống.')}
           </p>
-          <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
-            <Link href="/forms">
-              <Button size="lg" className="px-8 py-6 text-lg">
-                {t('home.viewForms', 'Xem danh sách form')}
-              </Button>
-            </Link>
-            <Link href="/workflow">
-              <Button size="lg" className="px-8 py-6 text-lg" variant="outline">
-                {t('home.viewWorkflow', 'Hệ thống Workflow')}
-              </Button>
-            </Link>
-          </div>
         </div>
-
-        <div className="mt-20">
-          <h2 className="text-2xl font-bold text-center mb-12">
-            {t('home.fieldTypes', 'Các loại trường dữ liệu')}
-          </h2>
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            <FeatureCard
-              title={t('home.features.textTitle', 'Văn bản & Đoạn văn')}
-              description={t('home.features.textDescription', 'Thu thập văn bản ngắn hoặc các đoạn văn dài từ người dùng.')}
-              icon={
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M14 3v4a1 1 0 0 0 1 1h4" />
-                  <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z" />
-                  <path d="M9 9h1" />
-                  <path d="M9 13h6" />
-                  <path d="M9 17h6" />
-                </svg>
-              }
-            />
-            <FeatureCard
-              title={t('home.features.choiceTitle', 'Lựa chọn')}
-              description={t('home.features.choiceDescription', 'Cho phép người dùng chọn một hoặc nhiều tùy chọn từ danh sách.')}
-              icon={
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M8 2h8" />
-                  <path d="M12 18v-9" />
-                  <path d="M8 11a4 4 0 0 0 8 0" />
-                  <path d="M2 12a10 10 0 0 0 20 0" />
-                </svg>
-              }
-            />
-            <FeatureCard
-              title={t('home.features.numberTitle', 'Số & Ngày tháng')}
-              description={t('home.features.numberDescription', 'Thu thập dữ liệu số và ngày tháng với định dạng chính xác.')}
-              icon={
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                  <line x1="16" y1="2" x2="16" y2="6" />
-                  <line x1="8" y1="2" x2="8" y2="6" />
-                  <line x1="3" y1="10" x2="21" y2="10" />
-                  <path d="M8 14h.01" />
-                  <path d="M12 14h.01" />
-                  <path d="M16 14h.01" />
-                  <path d="M8 18h.01" />
-                  <path d="M12 18h.01" />
-                  <path d="M16 18h.01" />
-                </svg>
-              }
-            />
-          </div>
+        
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <Card className="col-span-2">
+            <CardHeader>
+              <CardTitle>{t('home.fieldTypeUsageChart', 'Biểu đồ tần suất sử dụng loại trường')}</CardTitle>
+            </CardHeader>
+            <CardContent className="h-[400px]">
+              {loading ? (
+                <div className="flex flex-col gap-4 h-full">
+                  <Skeleton className="h-full w-full" />
+                </div>
+              ) : error ? (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-destructive">{error}</p>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={fieldStats}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 70 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis 
+                      dataKey="name" 
+                      angle={-45} 
+                      textAnchor="end"
+                      height={70}
+                      interval={0}
+                    />
+                    <YAxis />
+                    <Tooltip 
+                      formatter={(value: number, name: string) => [
+                        `${value} trường (${Math.round((value / formFieldCount) * 100)}%)`,
+                        'Số lượng'
+                      ]}
+                    />
+                    <Legend />
+                    <Bar 
+                      dataKey="value" 
+                      name="Số lượng" 
+                      fill="#00B1D2"
+                      radius={[4, 4, 0, 0]}
+                    >
+                      {fieldStats.map((entry, index) => (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={FIELD_TYPE_COLORS[entry.name as keyof typeof FIELD_TYPE_COLORS] || '#00B1D2'} 
+                        />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('home.fieldTypeDistributionChart', 'Phân bố loại trường')}</CardTitle>
+            </CardHeader>
+            <CardContent className="h-[400px]">
+              {loading ? (
+                <div className="flex flex-col gap-4 h-full">
+                  <Skeleton className="h-full w-full rounded-full" />
+                </div>
+              ) : error ? (
+                <div className="flex items-center justify-center h-full">
+                  <p className="text-destructive">{error}</p>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={fieldStats.slice(0, 10)} // Chỉ hiển thị 10 loại field phổ biến nhất
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={120}
+                      fill="#8884d8"
+                      dataKey="value"
+                      nameKey="name"
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {fieldStats.slice(0, 10).map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(value: number) => [
+                        `${value} trường (${Math.round((value / formFieldCount) * 100)}%)`,
+                        'Số lượng'
+                      ]}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+        
+        <div className="mt-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('home.fieldUsageStatistics', 'Thống kê chi tiết tần suất sử dụng field')}</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="flex flex-col gap-4">
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                  <Skeleton className="h-12 w-full" />
+                </div>
+              ) : error ? (
+                <p className="text-destructive">{error}</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr>
+                        <th className="text-left p-2 bg-muted">{t('home.fieldType', 'Loại trường')}</th>
+                        <th className="text-left p-2 bg-muted">{t('home.count', 'Số lượng')}</th>
+                        <th className="text-left p-2 bg-muted">{t('home.percentage', 'Phần trăm')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {fieldStats.map((stat, index) => (
+                        <tr key={index} className={index % 2 === 0 ? 'bg-muted/50' : ''}>
+                          <td className="p-2 font-medium">{stat.name}</td>
+                          <td className="p-2">{stat.value}</td>
+                          <td className="p-2">{stat.percent}%</td>
+                        </tr>
+                      ))}
+                      <tr className="bg-muted font-bold">
+                        <td className="p-2">{t('home.total', 'Tổng cộng')}</td>
+                        <td className="p-2">{formFieldCount}</td>
+                        <td className="p-2">100%</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </MainLayout>
-  );
-}
-
-interface FeatureCardProps {
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-}
-
-function FeatureCard({ title, description, icon }: FeatureCardProps) {
-  return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="flex flex-col items-center text-center">
-          <div className="mb-4 rounded-full bg-primary/10 p-3">
-            {icon}
-          </div>
-          <h3 className="text-lg font-medium">{title}</h3>
-          <p className="mt-2 text-sm text-gray-500">{description}</p>
-        </div>
-      </CardContent>
-    </Card>
   );
 }

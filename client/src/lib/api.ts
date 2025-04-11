@@ -7,6 +7,7 @@ import {
   MenusWithChildrenResponse,
   WorkflowResponse,
   SubmissionFormsResponse,
+  FieldUsageStatisticsResponse,
   DEFAULT_ORGANIZATION_ID,
   DEFAULT_USER_ID
 } from './types';
@@ -733,7 +734,7 @@ export async function apiRequest(
 /**
  * Lấy thống kê về tần suất sử dụng các loại field trong hệ thống
  */
-export async function fetchFieldUsageStatistics(): Promise<GraphQLResponse<any>> {
+export async function fetchFieldUsageStatistics(): Promise<GraphQLResponse<FieldUsageStatisticsResponse>> {
   const query = `
     query GetFieldUsageStatistics {
       # Lấy tất cả các fields đã được liên kết với forms
@@ -749,5 +750,5 @@ export async function fetchFieldUsageStatistics(): Promise<GraphQLResponse<any>>
     }
   `;
 
-  return executeGraphQLQuery(query);
+  return executeGraphQLQuery<GraphQLResponse<FieldUsageStatisticsResponse>>(query);
 }

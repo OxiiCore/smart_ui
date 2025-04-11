@@ -159,3 +159,22 @@ export interface SubmissionForm {
 export interface SubmissionFormsResponse {
   core_core_submission_forms: SubmissionForm[];
 }
+
+// Types for Field Usage Statistics
+export interface FormFieldStatistic {
+  name: string;
+  value: number;
+  percent: number;
+}
+
+export interface FieldUsageStatisticsResponse {
+  core_core_dynamic_form_fields: {
+    id: string;
+    dynamic_field_id: string;
+    core_dynamic_field: {
+      id: string;
+      name: string;
+      field_type: FieldType;
+    }
+  }[];
+}
