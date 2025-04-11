@@ -13,6 +13,7 @@ import RecordDetailPage from "@/pages/record-detail";
 import NotFound from "@/pages/not-found";
 import { useEffect } from "react";
 import { setupInitialTheme } from "@/lib/theme";
+import { MobileSidebarProvider } from "@/hooks/use-mobile-sidebar";
 
 function Router() {
   return (

@@ -59,10 +59,29 @@ export function MainLayout({ children, title }: MainLayoutProps) {
                 variant="ghost" 
                 size="icon" 
                 className="md:hidden mr-1" 
+                data-sidebar-trigger="true"
                 onClick={() => {
-                  const triggerButton = document.querySelector('[data-sidebar-trigger]');
+                  // Trực tiếp tìm kiếm nút trigger của sidebar
+                  const triggerButton = document.querySelector('[data-sidebar="trigger"]');
                   if (triggerButton) {
                     (triggerButton as HTMLButtonElement).click();
+                  } else {
+                    // Mở menu mobile bằng cách thao tác trực tiếp với DOM
+                    // Tìm SheetContent chứa sidebar mobile
+                    const sheetContent = document.querySelector('[data-mobile="true"]');
+                    if (sheetContent) {
+                      // Tìm Sheet cha
+                      const sheet = sheetContent.closest('[role="dialog"]');
+                      if (sheet) {
+                        sheet.setAttribute('data-state', 'open');
+                        sheet.removeAttribute('hidden');
+                        // Thêm overlay
+                        const overlay = document.createElement('div');
+                        overlay.setAttribute('data-state', 'open');
+                        overlay.classList.add('fixed', 'inset-0', 'z-50', 'bg-black/80');
+                        document.body.appendChild(overlay);
+                      }
+                    }
                   }
                 }}
               >
