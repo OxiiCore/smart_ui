@@ -215,17 +215,19 @@ export default function Home() {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={displayFieldStats.slice(0, 10)} // Chỉ hiển thị 10 loại field phổ biến nhất
+                      data={displayFieldStats.slice(0, 8)} // Chỉ hiển thị 8 loại field phổ biến nhất để giảm bớt sự phức tạp
                       cx="50%"
                       cy="50%"
-                      labelLine={false}
-                      outerRadius={120}
+                      labelLine={true}
+                      outerRadius={100}
+                      innerRadius={40}
+                      paddingAngle={3}
                       fill="#8884d8"
                       dataKey="value"
                       nameKey="displayName"
-                      label={({ displayName, percent }) => `${displayName}: ${(percent * 100).toFixed(0)}%`}
+                      label={({ displayName, percent }) => `${percent.toFixed(0)}%`}
                     >
-                      {displayFieldStats.slice(0, 10).map((entry, index) => (
+                      {displayFieldStats.slice(0, 8).map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                       ))}
                     </Pie>
@@ -234,7 +236,13 @@ export default function Home() {
                         `${value} trường (${Math.round((value / formFieldCount) * 100)}%)`,
                         'Số lượng'
                       ]}
-                      labelFormatter={(label) => `Loại: ${label}`}
+                      labelFormatter={(label) => `${label}`}
+                    />
+                    <Legend 
+                      layout="vertical"
+                      verticalAlign="middle"
+                      align="right"
+                      wrapperStyle={{ fontSize: '12px' }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -259,29 +267,85 @@ export default function Home() {
                 <p className="text-destructive">{error}</p>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead>
-                      <tr>
-                        <th className="text-left p-3 bg-muted">{t('home.fieldType', 'Loại trường')}</th>
-                        <th className="text-left p-3 bg-muted">{t('home.count', 'Số lượng')}</th>
-                        <th className="text-left p-3 bg-muted">{t('home.percentage', 'Phần trăm')}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {displayFieldStats.map((stat, index) => (
-                        <tr key={index} className={index % 2 === 0 ? 'bg-muted/50' : ''}>
-                          <td className="p-3 font-medium">{stat.displayName}</td>
-                          <td className="p-3">{stat.value}</td>
-                          <td className="p-3">{stat.percent}%</td>
-                        </tr>
-                      ))}
-                      <tr className="bg-muted font-bold">
-                        <td className="p-3">{t('home.total', 'Tổng cộng')}</td>
-                        <td className="p-3">{formFieldCount}</td>
-                        <td className="p-3">100%</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="col-span-full"> 
+                      <table className="w-full border-collapse">
+                        <thead>
+                          <tr className="bg-primary/10">
+                            <th className="text-left p-3 font-semibold rounded-tl-md">{t('home.fieldType', 'Loại trường')}</th>
+                            <th className="text-center p-3 font-semibold">{t('home.count', 'Số lượng')}</th>
+                            <th className="text-center p-3 font-semibold rounded-tr-md">{t('home.percentage', 'Tỉ lệ %')}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {displayFieldStats.slice(0, 10).map((stat, index) => (
+                            <tr key={index} className={index % 2 === 0 ? 'bg-muted/40 hover:bg-muted/60' : 'hover:bg-muted/30'}>
+                              <td className="p-3 font-medium border-b flex items-center">
+                                <div 
+                                  className="w-3 h-3 rounded-full mr-2" 
+                                  style={{ backgroundColor: FIELD_TYPE_COLORS[stat.name as keyof typeof FIELD_TYPE_COLORS] || '#00B1D2' }}
+                                />
+                                {stat.displayName}
+                                {index < 3 && <span className="ml-2 bg-primary/10 text-primary text-[10px] px-2 py-0.5 rounded-full text-xs font-medium">Phổ biến</span>}
+                              </td>
+                              <td className="p-3 text-center border-b">{stat.value}</td>
+                              <td className="p-3 text-center border-b">
+                                <div className="flex items-center justify-center gap-2">
+                                  <div className="w-24 bg-muted rounded-full h-2 overflow-hidden">
+                                    <div 
+                                      className="h-2 rounded-full" 
+                                      style={{ 
+                                        width: `${stat.percent}%`,
+                                        backgroundColor: FIELD_TYPE_COLORS[stat.name as keyof typeof FIELD_TYPE_COLORS] || '#00B1D2'
+                                      }}
+                                    />
+                                  </div>
+                                  <span>{stat.percent}%</span>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                        <tfoot>
+                          <tr className="bg-primary/5 font-bold">
+                            <td className="p-3 rounded-bl-md">{t('home.total', 'Tổng cộng')}</td>
+                            <td className="p-3 text-center">{formFieldCount}</td>
+                            <td className="p-3 text-center rounded-br-md">100%</td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                    
+                    {displayFieldStats.length > 10 && (
+                      <div className="col-span-full mt-4">
+                        <details className="border rounded-md overflow-hidden">
+                          <summary className="p-3 bg-muted/30 cursor-pointer hover:bg-muted/50 font-medium flex items-center">
+                            <span>Hiển thị thêm {displayFieldStats.length - 10} loại trường khác</span>
+                          </summary>
+                          <div className="p-4">
+                            <table className="w-full">
+                              <thead>
+                                <tr className="bg-muted/50">
+                                  <th className="text-left p-2 font-medium">{t('home.fieldType', 'Loại trường')}</th>
+                                  <th className="text-center p-2 font-medium">{t('home.count', 'Số lượng')}</th>
+                                  <th className="text-center p-2 font-medium">{t('home.percentage', 'Phần trăm')}</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {displayFieldStats.slice(10).map((stat, index) => (
+                                  <tr key={index} className="border-b">
+                                    <td className="p-2">{stat.displayName}</td>
+                                    <td className="p-2 text-center">{stat.value}</td>
+                                    <td className="p-2 text-center">{stat.percent}%</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </details>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </CardContent>
