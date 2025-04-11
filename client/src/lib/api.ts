@@ -729,3 +729,25 @@ export async function apiRequest(
 
   return res;
 }
+
+/**
+ * Lấy thống kê về tần suất sử dụng các loại field trong hệ thống
+ */
+export async function fetchFieldUsageStatistics(): Promise<GraphQLResponse<any>> {
+  const query = `
+    query GetFieldUsageStatistics {
+      # Lấy tất cả các fields đã được liên kết với forms
+      core_core_dynamic_form_fields {
+        id
+        dynamic_field_id
+        core_dynamic_field {
+          id
+          name
+          field_type
+        }
+      }
+    }
+  `;
+
+  return executeGraphQLQuery(query);
+}
