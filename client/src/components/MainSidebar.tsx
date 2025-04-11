@@ -505,6 +505,7 @@ export function MainSidebar({ children }: { children: React.ReactNode }) {
 function DynamicMenuItem({ menu }: { menu: MenuType }) {
   const [isOpen, setIsOpen] = useState(false);
   const [location] = useLocation();
+  const mobileSidebar = useMobileSidebar(); // Sử dụng mobileSidebar context
   const hasChildren = menu.core_dynamic_child_menus && menu.core_dynamic_child_menus.length > 0;
 
   // Kiểm tra xem có submenu đang được chọn không
@@ -523,34 +524,10 @@ function DynamicMenuItem({ menu }: { menu: MenuType }) {
   // Xử lý đóng sidebar khi click vào menu trên thiết bị di động
   const handleMobileMenuClick = () => {
     if (window.innerWidth < 1024) { // 1024px là điểm ngắt cho lg (large) trong Tailwind
+      // Sử dụng context để đóng sidebar
       setTimeout(() => {
-        try {
-          // Sử dụng cách tiếp cận đóng trực tiếp sidebar
-          const sidebar = document.querySelector('[data-sidebar-content]');
-          if (sidebar) {
-            sidebar.setAttribute('data-sidebar-opened', 'false');
-            // Cũng remove overlay nếu có
-            const overlay = document.getElementById('sidebar-overlay');
-            if (overlay) {
-              overlay.classList.add('animate-out', 'fade-out-0');
-              setTimeout(() => {
-                try {
-                  overlay.remove();
-                } catch (err) {
-                  console.error('Error removing overlay in menu click:', err);
-                }
-              }, 200);
-            }
-          }
-        } catch (err) {
-          console.error('Error closing sidebar in menu click:', err);
-          // Fallback - cố gắng loại bỏ overlay
-          try {
-            const overlay = document.getElementById('sidebar-overlay');
-            if (overlay) overlay.remove();
-          } catch (e) {}
-        }
-      }, 100);
+        mobileSidebar.close();
+      }, 100); // Đợi một chút để sự kiện điều hướng được xử lý trước
     }
   };
   
