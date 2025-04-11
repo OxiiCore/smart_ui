@@ -40,10 +40,12 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <MainSidebar>
-        <Router />
-      </MainSidebar>
-      <Toaster />
+      <MobileSidebarProvider>
+        <MainSidebar>
+          <Router />
+        </MainSidebar>
+        <Toaster />
+      </MobileSidebarProvider>
     </QueryClientProvider>
   );
 }

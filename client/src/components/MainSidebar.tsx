@@ -25,6 +25,7 @@ import { useScreenSize } from '@/hooks/use-mobile';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from "@/components/ui/dialog";
 import { ThemeType, ThemeStyle, themeManager } from '@/lib/theme';
 import { useTranslation } from 'react-i18next';
+import { useMobileSidebar } from '@/hooks/use-mobile-sidebar';
 
 export function MainSidebar({ children }: { children: React.ReactNode }) {
   const { t } = useTranslation();
@@ -32,7 +33,7 @@ export function MainSidebar({ children }: { children: React.ReactNode }) {
   const screenSize = useScreenSize(); // Sử dụng hook để lấy kích thước màn hình hiện tại
   const [showThemeDialog, setShowThemeDialog] = useState(false);
   const [expandedMenus, setExpandedMenus] = useState<string[]>([]);
-  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const mobileSidebar = useMobileSidebar(); // Sử dụng context của mobile sidebar
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [currentTheme, setCurrentTheme] = useState(themeManager.getTheme());
@@ -198,39 +199,15 @@ export function MainSidebar({ children }: { children: React.ReactNode }) {
                   {t('app.version', 'v1.0.0')}
                 </p>
               </div>
-              {/* Chỉ hiển thị nút đóng trên mobile */}
+              {/* Chỉ hiển thị nút đóng trên mobile - Sử dụng context mobileSidebar */}
               <button 
                 className="ml-auto lg:hidden text-muted-foreground hover:text-sidebar-foreground p-1 rounded-full hover:bg-primary/10" 
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
                   
-                  try {
-                    // Đóng sidebar theo cách khác
-                    const sidebar = document.querySelector('[data-sidebar-content]');
-                    if (sidebar) {
-                      sidebar.setAttribute('data-sidebar-opened', 'false');
-                      // Cũng remove overlay nếu có
-                      const overlay = document.getElementById('sidebar-overlay');
-                      if (overlay) {
-                        overlay.classList.add('animate-out', 'fade-out-0');
-                        setTimeout(() => {
-                          try {
-                            overlay.remove();
-                          } catch (err) {
-                            console.error('Error removing overlay in X button:', err);
-                          }
-                        }, 200);
-                      }
-                    }
-                  } catch (err) {
-                    console.error('Error closing sidebar with X button:', err);
-                    // Fallback method
-                    try {
-                      const overlay = document.getElementById('sidebar-overlay');
-                      if (overlay) overlay.remove();
-                    } catch (e) {}
-                  }
+                  // Sử dụng context mobileSidebar để đóng sidebar
+                  mobileSidebar.close();
                 }}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

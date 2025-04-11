@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { themeManager } from '@/lib/theme';
+import { useMobileSidebar } from '@/hooks/use-mobile-sidebar';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -19,6 +20,7 @@ export function MainLayout({ children, title }: MainLayoutProps) {
   const { t } = useTranslation();
   const [scrolled, setScrolled] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(themeManager.getIsDarkMode());
+  const mobileSidebar = useMobileSidebar();
   
   // Theo dõi cuộn trang để thêm shadow cho header
   useEffect(() => {
@@ -59,30 +61,9 @@ export function MainLayout({ children, title }: MainLayoutProps) {
                 variant="ghost" 
                 size="icon" 
                 className="md:hidden mr-1" 
-                data-sidebar-trigger="true"
                 onClick={() => {
-                  // Trực tiếp tìm kiếm nút trigger của sidebar
-                  const triggerButton = document.querySelector('[data-sidebar="trigger"]');
-                  if (triggerButton) {
-                    (triggerButton as HTMLButtonElement).click();
-                  } else {
-                    // Mở menu mobile bằng cách thao tác trực tiếp với DOM
-                    // Tìm SheetContent chứa sidebar mobile
-                    const sheetContent = document.querySelector('[data-mobile="true"]');
-                    if (sheetContent) {
-                      // Tìm Sheet cha
-                      const sheet = sheetContent.closest('[role="dialog"]');
-                      if (sheet) {
-                        sheet.setAttribute('data-state', 'open');
-                        sheet.removeAttribute('hidden');
-                        // Thêm overlay
-                        const overlay = document.createElement('div');
-                        overlay.setAttribute('data-state', 'open');
-                        overlay.classList.add('fixed', 'inset-0', 'z-50', 'bg-black/80');
-                        document.body.appendChild(overlay);
-                      }
-                    }
-                  }
+                  // Sử dụng mobileSidebar đã khai báo ở trên
+                  mobileSidebar.toggle();
                 }}
               >
                 <Menu className="h-5 w-5" />
