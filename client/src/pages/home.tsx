@@ -211,59 +211,75 @@ export default function Home() {
             <CardHeader className="pb-3">
               <CardTitle>{t('home.fieldTypeDistributionChart', 'Phân bố loại trường')}</CardTitle>
             </CardHeader>
-            <CardContent className="h-[400px]">
+            <CardContent className={isMobile ? "h-auto pb-6" : "h-[400px]"}>
               {loading ? (
-                <div className="flex flex-col gap-4 h-full">
+                <div className="flex flex-col gap-4 h-full min-h-[250px]">
                   <Skeleton className="h-full w-full rounded-full" />
                 </div>
               ) : error ? (
-                <div className="flex items-center justify-center h-full">
+                <div className="flex items-center justify-center h-full min-h-[250px]">
                   <p className="text-destructive">{error}</p>
                 </div>
               ) : (
                 <div className="flex flex-col h-full">
                   {/* Điều chỉnh ResponsiveContainer height để có không gian cho Legend */}
-                  <ResponsiveContainer width="100%" height={isMobile ? "85%" : "75%"}>
-                    <PieChart margin={{ top: 0, right: 0, bottom: 20, left: 0 }}>
-                      <Pie
-                        data={displayFieldStats.slice(0, isMobile ? 5 : 8)} 
-                        cx="50%"
-                        cy="50%"
-                        labelLine={true}
-                        outerRadius={isMobile ? 65 : 90}
-                        innerRadius={isMobile ? 25 : 40}
-                        paddingAngle={3}
-                        fill="#8884d8"
-                        dataKey="value"
-                        nameKey="displayName"
-                        label={({ percent }) => `${percent.toFixed(0)}%`}
-                      >
-                        {displayFieldStats.slice(0, isMobile ? 5 : 8).map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
-                        ))}
-                      </Pie>
-                      <Tooltip 
-                        formatter={(value: number) => [
-                          `${value} trường (${Math.round((value / formFieldCount) * 100)}%)`,
-                          'Số lượng'
-                        ]}
-                        labelFormatter={(label) => `${label}`}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  
-                  {/* Tùy chỉnh Legend riêng, sử dụng grid để hiển thị tốt hơn */}
-                  <div className={`grid ${isMobile ? 'grid-cols-2' : 'grid-cols-4'} gap-2 px-4 mt-2`}>
-                    {displayFieldStats.slice(0, isMobile ? 5 : 8).map((stat, index) => (
-                      <div key={index} className="flex items-center gap-1 text-xs">
-                        <div 
-                          className="w-3 h-3 rounded-full flex-shrink-0" 
-                          style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}
+                  <div className={isMobile ? "h-[200px] w-full mx-auto" : "h-[75%] w-full"}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                        <Pie
+                          data={displayFieldStats.slice(0, isMobile ? 5 : 8)} 
+                          cx="50%"
+                          cy="50%"
+                          labelLine={true}
+                          outerRadius={isMobile ? 60 : 90}
+                          innerRadius={isMobile ? 25 : 40}
+                          paddingAngle={3}
+                          fill="#8884d8"
+                          dataKey="value"
+                          nameKey="displayName"
+                          label={({ percent }) => `${percent.toFixed(0)}%`}
+                        >
+                          {displayFieldStats.slice(0, isMobile ? 5 : 8).map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip 
+                          formatter={(value: number) => [
+                            `${value} trường (${Math.round((value / formFieldCount) * 100)}%)`,
+                            'Số lượng'
+                          ]}
+                          labelFormatter={(label) => `${label}`}
                         />
-                        <span className="truncate">{stat.displayName}</span>
-                      </div>
-                    ))}
+                      </PieChart>
+                    </ResponsiveContainer>
                   </div>
+                  
+                  {/* Tùy chỉnh Legend riêng với cách hiển thị khác nhau cho mobile và desktop */}
+                  {isMobile ? (
+                    <div className="mt-4 flex flex-wrap justify-center gap-y-2">
+                      {displayFieldStats.slice(0, 5).map((stat, index) => (
+                        <div key={index} className="flex items-center gap-1 text-xs mx-2">
+                          <div 
+                            className="w-3 h-3 rounded-full flex-shrink-0" 
+                            style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}
+                          />
+                          <span className="whitespace-nowrap">{stat.displayName}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-4 gap-2 px-4 mt-2">
+                      {displayFieldStats.slice(0, 8).map((stat, index) => (
+                        <div key={index} className="flex items-center gap-1 text-xs">
+                          <div 
+                            className="w-3 h-3 rounded-full flex-shrink-0" 
+                            style={{ backgroundColor: PIE_COLORS[index % PIE_COLORS.length] }}
+                          />
+                          <span className="truncate">{stat.displayName}</span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
