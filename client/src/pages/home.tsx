@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { MainLayout } from '@/components/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslation } from 'react-i18next';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, 
   Legend, ResponsiveContainer, PieChart, Pie, Cell
@@ -42,6 +43,7 @@ const PIE_COLORS = [
 
 export default function Home() {
   const { t } = useTranslation();
+  const { isMobile } = useIsMobile();
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [fieldStats, setFieldStats] = useState<FormFieldStatistic[]>([]);
@@ -158,19 +160,23 @@ export default function Home() {
               ) : (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
-                    data={displayFieldStats}
-                    margin={{ top: 20, right: 10, left: 10, bottom: 70 }}
+                    data={displayFieldStats.slice(0, isMobile ? 5 : displayFieldStats.length)}
+                    margin={{ top: 20, right: 10, left: 10, bottom: isMobile ? 40 : 70 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis 
                       dataKey="displayName" 
-                      angle={-45} 
+                      angle={isMobile ? -30 : -45} 
                       textAnchor="end"
-                      height={70}
+                      height={isMobile ? 50 : 70}
                       interval={0}
-                      fontSize={12}
+                      fontSize={isMobile ? 10 : 12}
+                      tickFormatter={(value) => isMobile && value.length > 10 ? value.substring(0, 10) + '...' : value}
                     />
-                    <YAxis />
+                    <YAxis 
+                      width={isMobile ? 30 : 40}
+                      tickFormatter={(value) => isMobile && value > 999 ? `${(value/1000).toFixed(1)}K` : value.toString()}
+                    />
                     <Tooltip 
                       formatter={(value: number, name: string, props: any) => [
                         `${value} trường (${Math.round((value / formFieldCount) * 100)}%)`,
@@ -178,14 +184,17 @@ export default function Home() {
                       ]}
                       labelFormatter={(label) => `Loại: ${label}`}
                     />
-                    <Legend />
+                    <Legend 
+                      verticalAlign={isMobile ? "top" : "bottom"}
+                      height={isMobile ? 30 : 36}
+                    />
                     <Bar 
                       dataKey="value" 
                       name="Số lượng" 
                       fill="#00B1D2"
                       radius={[4, 4, 0, 0]}
                     >
-                      {displayFieldStats.map((entry, index) => (
+                      {displayFieldStats.slice(0, isMobile ? 5 : displayFieldStats.length).map((entry, index) => (
                         <Cell 
                           key={`cell-${index}`} 
                           fill={FIELD_TYPE_COLORS[entry.name as keyof typeof FIELD_TYPE_COLORS] || '#00B1D2'} 
@@ -215,19 +224,19 @@ export default function Home() {
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={displayFieldStats.slice(0, 8)} // Chỉ hiển thị 8 loại field phổ biến nhất để giảm bớt sự phức tạp
+                      data={displayFieldStats.slice(0, isMobile ? 5 : 8)} 
                       cx="50%"
                       cy="50%"
-                      labelLine={true}
-                      outerRadius={100}
-                      innerRadius={40}
+                      labelLine={!isMobile}
+                      outerRadius={isMobile ? 80 : 100}
+                      innerRadius={isMobile ? 30 : 40}
                       paddingAngle={3}
                       fill="#8884d8"
                       dataKey="value"
                       nameKey="displayName"
-                      label={({ displayName, percent }) => `${percent.toFixed(0)}%`}
+                      label={({ percent }) => isMobile ? null : `${percent.toFixed(0)}%`}
                     >
-                      {displayFieldStats.slice(0, 8).map((entry, index) => (
+                      {displayFieldStats.slice(0, isMobile ? 5 : 8).map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
                       ))}
                     </Pie>
@@ -239,10 +248,13 @@ export default function Home() {
                       labelFormatter={(label) => `${label}`}
                     />
                     <Legend 
-                      layout="vertical"
-                      verticalAlign="middle"
-                      align="right"
-                      wrapperStyle={{ fontSize: '12px' }}
+                      layout={isMobile ? "horizontal" : "vertical"}
+                      verticalAlign={isMobile ? "bottom" : "middle"}
+                      align={isMobile ? "center" : "right"}
+                      wrapperStyle={{ 
+                        fontSize: isMobile ? '10px' : '12px',
+                        paddingTop: isMobile ? '10px' : '0',
+                      }}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -269,54 +281,114 @@ export default function Home() {
                 <div className="overflow-x-auto">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div className="col-span-full"> 
-                      <table className="w-full border-collapse">
-                        <thead>
-                          <tr className="bg-primary/10">
-                            <th className="text-left p-3 font-semibold rounded-tl-md">{t('home.fieldType', 'Loại trường')}</th>
-                            <th className="text-center p-3 font-semibold">{t('home.count', 'Số lượng')}</th>
-                            <th className="text-center p-3 font-semibold rounded-tr-md">{t('home.percentage', 'Tỉ lệ %')}</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {displayFieldStats.slice(0, 10).map((stat, index) => (
-                            <tr key={index} className={index % 2 === 0 ? 'bg-muted/40 hover:bg-muted/60' : 'hover:bg-muted/30'}>
-                              <td className="p-3 font-medium border-b flex items-center">
-                                <div 
-                                  className="w-3 h-3 rounded-full mr-2" 
-                                  style={{ backgroundColor: FIELD_TYPE_COLORS[stat.name as keyof typeof FIELD_TYPE_COLORS] || '#00B1D2' }}
-                                />
-                                {stat.displayName}
-                                {index < 3 && <span className="ml-2 bg-primary/10 text-primary text-[10px] px-2 py-0.5 rounded-full text-xs font-medium">Phổ biến</span>}
-                              </td>
-                              <td className="p-3 text-center border-b">{stat.value}</td>
-                              <td className="p-3 text-center border-b">
-                                <div className="flex items-center justify-center gap-2">
-                                  <div className="w-24 bg-muted rounded-full h-2 overflow-hidden">
-                                    <div 
-                                      className="h-2 rounded-full" 
-                                      style={{ 
-                                        width: `${stat.percent}%`,
-                                        backgroundColor: FIELD_TYPE_COLORS[stat.name as keyof typeof FIELD_TYPE_COLORS] || '#00B1D2'
-                                      }}
-                                    />
-                                  </div>
-                                  <span>{stat.percent}%</span>
+                      {isMobile ? (
+                        // Hiển thị dạng card trên mobile
+                        <div className="space-y-3">
+                          {displayFieldStats.slice(0, 7).map((stat, index) => (
+                            <div key={index} className="border rounded-lg p-3 shadow-sm">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  <div 
+                                    className="w-3 h-3 rounded-full" 
+                                    style={{ backgroundColor: FIELD_TYPE_COLORS[stat.name as keyof typeof FIELD_TYPE_COLORS] || '#00B1D2' }}
+                                  />
+                                  <span className="font-medium">{stat.displayName}</span>
+                                  {index < 3 && <span className="ml-1 bg-primary/10 text-primary text-[10px] px-2 py-0.5 rounded-full text-xs font-medium whitespace-nowrap">Phổ biến</span>}
                                 </div>
-                              </td>
-                            </tr>
+                                <span className="text-sm font-semibold">{stat.value} ({stat.percent}%)</span>
+                              </div>
+                              <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                                <div 
+                                  className="h-2 rounded-full" 
+                                  style={{ 
+                                    width: `${stat.percent}%`,
+                                    backgroundColor: FIELD_TYPE_COLORS[stat.name as keyof typeof FIELD_TYPE_COLORS] || '#00B1D2'
+                                  }}
+                                />
+                              </div>
+                            </div>
                           ))}
-                        </tbody>
-                        <tfoot>
-                          <tr className="bg-primary/5 font-bold">
-                            <td className="p-3 rounded-bl-md">{t('home.total', 'Tổng cộng')}</td>
-                            <td className="p-3 text-center">{formFieldCount}</td>
-                            <td className="p-3 text-center rounded-br-md">100%</td>
-                          </tr>
-                        </tfoot>
-                      </table>
+                          {displayFieldStats.length > 7 && (
+                            <div className="mt-3 border rounded-lg overflow-hidden">
+                              <details>
+                                <summary className="p-3 bg-muted/30 cursor-pointer hover:bg-muted/50 font-medium flex items-center">
+                                  <span>Hiển thị thêm {displayFieldStats.length - 7} loại trường khác</span>
+                                </summary>
+                                <div className="p-3 space-y-3">
+                                  {displayFieldStats.slice(7).map((stat, index) => (
+                                    <div key={index} className="border-b pb-2 last:border-b-0 last:pb-0 pt-2 first:pt-0">
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-2">
+                                          <div 
+                                            className="w-2 h-2 rounded-full" 
+                                            style={{ backgroundColor: FIELD_TYPE_COLORS[stat.name as keyof typeof FIELD_TYPE_COLORS] || '#00B1D2' }}
+                                          />
+                                          <span className="text-sm">{stat.displayName}</span>
+                                        </div>
+                                        <span className="text-xs">{stat.value} ({stat.percent}%)</span>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </details>
+                            </div>
+                          )}
+                          <div className="mt-3 bg-primary/5 rounded-lg p-3 font-bold flex justify-between items-center">
+                            <span>{t('home.total', 'Tổng cộng')}</span>
+                            <span>{formFieldCount} (100%)</span>
+                          </div>
+                        </div>
+                      ) : (
+                        // Hiển thị dạng bảng trên desktop
+                        <table className="w-full border-collapse">
+                          <thead>
+                            <tr className="bg-primary/10">
+                              <th className="text-left p-3 font-semibold rounded-tl-md">{t('home.fieldType', 'Loại trường')}</th>
+                              <th className="text-center p-3 font-semibold">{t('home.count', 'Số lượng')}</th>
+                              <th className="text-center p-3 font-semibold rounded-tr-md">{t('home.percentage', 'Tỉ lệ %')}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {displayFieldStats.slice(0, 10).map((stat, index) => (
+                              <tr key={index} className={index % 2 === 0 ? 'bg-muted/40 hover:bg-muted/60' : 'hover:bg-muted/30'}>
+                                <td className="p-3 font-medium border-b flex items-center">
+                                  <div 
+                                    className="w-3 h-3 rounded-full mr-2" 
+                                    style={{ backgroundColor: FIELD_TYPE_COLORS[stat.name as keyof typeof FIELD_TYPE_COLORS] || '#00B1D2' }}
+                                  />
+                                  {stat.displayName}
+                                  {index < 3 && <span className="ml-2 bg-primary/10 text-primary text-[10px] px-2 py-0.5 rounded-full text-xs font-medium">Phổ biến</span>}
+                                </td>
+                                <td className="p-3 text-center border-b">{stat.value}</td>
+                                <td className="p-3 text-center border-b">
+                                  <div className="flex items-center justify-center gap-2">
+                                    <div className="w-24 bg-muted rounded-full h-2 overflow-hidden">
+                                      <div 
+                                        className="h-2 rounded-full" 
+                                        style={{ 
+                                          width: `${stat.percent}%`,
+                                          backgroundColor: FIELD_TYPE_COLORS[stat.name as keyof typeof FIELD_TYPE_COLORS] || '#00B1D2'
+                                        }}
+                                      />
+                                    </div>
+                                    <span>{stat.percent}%</span>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                          <tfoot>
+                            <tr className="bg-primary/5 font-bold">
+                              <td className="p-3 rounded-bl-md">{t('home.total', 'Tổng cộng')}</td>
+                              <td className="p-3 text-center">{formFieldCount}</td>
+                              <td className="p-3 text-center rounded-br-md">100%</td>
+                            </tr>
+                          </tfoot>
+                        </table>
+                      )}
                     </div>
                     
-                    {displayFieldStats.length > 10 && (
+                    {!isMobile && displayFieldStats.length > 10 && (
                       <div className="col-span-full mt-4">
                         <details className="border rounded-md overflow-hidden">
                           <summary className="p-3 bg-muted/30 cursor-pointer hover:bg-muted/50 font-medium flex items-center">
