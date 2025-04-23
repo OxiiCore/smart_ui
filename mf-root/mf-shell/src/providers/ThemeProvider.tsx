@@ -1,63 +1,65 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-type ThemeMode = 'light' | 'dark' | 'system';
-type ThemeStyle = 'professional' | 'tint' | 'vibrant';
+type Theme = 'light' | 'dark' | 'system';
 
-interface ThemeState {
-  theme: ThemeMode;
-  themeStyle: ThemeStyle;
+interface ThemeContextType {
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
 }
 
-interface ThemeContextValue {
-  currentTheme: ThemeState;
-  setTheme: (theme: Partial<ThemeState>) => void;
-}
-
-const defaultTheme: ThemeState = {
+const ThemeContext = createContext<ThemeContextType>({
   theme: 'system',
-  themeStyle: 'professional',
-};
-
-const ThemeContext = createContext<ThemeContextValue>({
-  currentTheme: defaultTheme,
   setTheme: () => {},
 });
 
 export const useTheme = () => useContext(ThemeContext);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [currentTheme, setCurrentTheme] = useState<ThemeState>(() => {
-    // Check if a theme preference is stored in localStorage
-    const savedTheme = localStorage.getItem('theme');
-    return savedTheme ? { ...defaultTheme, ...JSON.parse(savedTheme) } : defaultTheme;
-  });
+  const [theme, setTheme] = useState<Theme>(
+    (localStorage.getItem('theme') as Theme) || 'system'
+  );
 
-  // Update the theme in localStorage when it changes
+  // Update the data-theme attribute on the document element when the theme changes
   useEffect(() => {
-    localStorage.setItem('theme', JSON.stringify(currentTheme));
+    const root = window.document.documentElement;
     
-    // Apply theme classes to the document element
-    const root = document.documentElement;
+    // Remove all existing theme classes
+    root.classList.remove('light', 'dark');
     
-    // Apply dark/light mode
-    if (currentTheme.theme === 'dark' || 
-        (currentTheme.theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-      root.classList.add('dark');
+    // Set the appropriate theme
+    if (theme === 'system') {
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches
+        ? 'dark'
+        : 'light';
+      root.classList.add(systemTheme);
     } else {
-      root.classList.remove('dark');
+      root.classList.add(theme);
     }
     
-    // Apply theme style
-    root.setAttribute('data-theme-style', currentTheme.themeStyle);
-    
-  }, [currentTheme]);
+    // Save to localStorage
+    localStorage.setItem('theme', theme);
+  }, [theme]);
 
-  const setTheme = (theme: Partial<ThemeState>) => {
-    setCurrentTheme(prevTheme => ({ ...prevTheme, ...theme }));
-  };
+  // Listen for system theme changes
+  useEffect(() => {
+    if (theme === 'system') {
+      const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+      
+      const handleChange = () => {
+        const root = window.document.documentElement;
+        root.classList.remove('light', 'dark');
+        root.classList.add(mediaQuery.matches ? 'dark' : 'light');
+      };
+      
+      mediaQuery.addEventListener('change', handleChange);
+      return () => mediaQuery.removeEventListener('change', handleChange);
+    }
+  }, [theme]);
+
+  const contextValue = { theme, setTheme };
 
   return (
-    <ThemeContext.Provider value={{ currentTheme, setTheme }}>
+    <ThemeContext.Provider value={contextValue}>
       {children}
     </ThemeContext.Provider>
   );

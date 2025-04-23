@@ -1,44 +1,70 @@
 import React, { lazy, Suspense } from 'react';
-import { loadPage } from '../remotes/loaders';
+import { 
+  loadHomeComponent, 
+  loadSubmissionComponent, 
+  loadFormComponent, 
+  loadRecordComponent, 
+  RemoteErrorBoundary 
+} from '../remotes/loaders';
 
-// Lazy-loaded components with suspense
-const LazyHome = lazy(() => loadPage('home', 'HomePage'));
-const LazySubmission = lazy(() => loadPage('submission', 'SubmissionPage'));
-const LazyForm = lazy(() => loadPage('form', 'FormPage'));
-const LazyRecordDetail = lazy(() => loadPage('record', 'RecordDetailPage'));
+// Define loading spinner component
+const LoadingSpinner = () => (
+  <div className="flex items-center justify-center h-full">
+    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+  </div>
+);
 
-// Route configuration
-export const routes = [
+// Create lazy-loaded components for each route
+const HomePage = lazy(() => loadHomeComponent().then(Component => ({ default: Component })));
+const SubmissionPage = lazy(() => loadSubmissionComponent().then(Component => ({ default: Component })));
+const FormPage = lazy(() => loadFormComponent().then(Component => ({ default: Component })));
+const RecordPage = lazy(() => loadRecordComponent().then(Component => ({ default: Component })));
+
+// Define route configuration
+export interface RouteConfig {
+  path: string;
+  component: React.ComponentType;
+}
+
+export const routes: RouteConfig[] = [
   {
     path: '/',
     component: () => (
-      <Suspense fallback={<div>Loading Home...</div>}>
-        <LazyHome />
-      </Suspense>
+      <RemoteErrorBoundary>
+        <Suspense fallback={<LoadingSpinner />}>
+          <HomePage />
+        </Suspense>
+      </RemoteErrorBoundary>
     ),
   },
   {
-    path: '/submission/:workflowId',
-    component: ({ params }: { params: { workflowId: string } }) => (
-      <Suspense fallback={<div>Loading Submission...</div>}>
-        <LazySubmission workflowId={params.workflowId} />
-      </Suspense>
-    ),
-  },
-  {
-    path: '/forms',
+    path: '/submissions',
     component: () => (
-      <Suspense fallback={<div>Loading Forms...</div>}>
-        <LazyForm />
-      </Suspense>
+      <RemoteErrorBoundary>
+        <Suspense fallback={<LoadingSpinner />}>
+          <SubmissionPage />
+        </Suspense>
+      </RemoteErrorBoundary>
     ),
   },
   {
-    path: '/record/:id',
-    component: ({ params }: { params: { id: string } }) => (
-      <Suspense fallback={<div>Loading Record Details...</div>}>
-        <LazyRecordDetail recordId={params.id} />
-      </Suspense>
+    path: '/form/:formId',
+    component: () => (
+      <RemoteErrorBoundary>
+        <Suspense fallback={<LoadingSpinner />}>
+          <FormPage />
+        </Suspense>
+      </RemoteErrorBoundary>
+    ),
+  },
+  {
+    path: '/record-detail/:recordId',
+    component: () => (
+      <RemoteErrorBoundary>
+        <Suspense fallback={<LoadingSpinner />}>
+          <RecordPage />
+        </Suspense>
+      </RemoteErrorBoundary>
     ),
   },
 ];

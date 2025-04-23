@@ -1,15 +1,17 @@
 import React from 'react';
-import { useRoutes } from 'wouter';
+import { Route, Switch } from 'wouter';
 import { routes } from './routes';
 
-export function AppRouter() {
-  // Using wouter's useRoutes for declarative routing
-  const routeResult = useRoutes(routes);
-  
-  // Fallback if no routes match
-  if (!routeResult) {
-    return <div>Not Found</div>;
-  }
-  
-  return routeResult;
-}
+export const AppRouter: React.FC = () => {
+  return (
+    <Switch>
+      {routes.map((route) => (
+        <Route
+          key={route.path}
+          path={route.path}
+          component={route.component}
+        />
+      ))}
+    </Switch>
+  );
+};
