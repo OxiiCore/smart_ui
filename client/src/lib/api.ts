@@ -635,9 +635,8 @@ export async function submitTransitionForm(
   submissionData: any[]
 ): Promise<GraphQLResponse<any>> {
   const query = `
-    mutation insert_submission_form($transitionId: String!, $recordId: String!, $userId: String!, $name: String!, $submissionData: JSON) {
-      insert_submission_form(
-        args: {
+    mutation insert_submission_form($transitionId: uuid!, $recordId: uuid!, $userId: uuid!, $name: String!, $submissionData: JSON) {
+      insert_core_core_submission_forms_one(object: {
           name: $name,
           transition_id: $transitionId,
           record_id: $recordId,
