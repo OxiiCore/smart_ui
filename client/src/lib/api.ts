@@ -255,12 +255,12 @@ export async function submitFormData(submission: FormSubmission & { workflowId?:
   // Áp dụng logic cho tất cả submenu, giống như cách xử lý cho submenu khiếu nại (ID: "ss")
   const query = `
     mutation InsertMenuRecord($menuId: String!, $userId: String!, $organizationId: String!, $title: String!, $submissionData: JSON) {
-insert_menu_record(args: {
+insert_core_core_menu_records_one(object: {
 menu_id: $menuId,
 user_id: $userId,
 organization_id: $organizationId,
 title: $title,
-submission_data: $submissionData
+data: $submissionData
 }) {
 id
 code

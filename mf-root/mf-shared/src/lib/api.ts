@@ -255,12 +255,12 @@ export async function submitFormData(submission: FormSubmission & { workflowId?:
   // Áp dụng logic cho tất cả submenu, giống như cách xử lý cho submenu khiếu nại (ID: "ss")
   const query = `
     mutation InsertMenuRecord($menuId: String!, $userId: String!, $organizationId: String!, $title: String!, $submissionData: JSON) {
-insert_menu_record(args: {
+insert_core_core_menu_records_one(object: {
 menu_id: $menuId,
 user_id: $userId,
 organization_id: $organizationId,
 title: $title,
-submission_data: $submissionData
+data: $submissionData
 }) {
 id
 code
@@ -636,15 +636,13 @@ export async function submitTransitionForm(
 ): Promise<GraphQLResponse<any>> {
   const query = `
     mutation insert_submission_form($transitionId: String!, $recordId: String!, $userId: String!, $name: String!, $submissionData: JSON) {
-      insert_submission_form(
-        args: {
-          name: $name,
-          transition_id: $transitionId,
-          record_id: $recordId,
-          user_id: $userId,
-          submission_data: $submissionData
-        }
-      ) {
+      insert_core_core_submission_forms_one(object: {
+        name: $name,
+        transition_id: $transitionId,
+        record_id: $recordId,
+        user_id: $userId,
+        submission_data: $submissionData
+      }) {
         id
         code
         submission_data
