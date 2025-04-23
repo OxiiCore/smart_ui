@@ -1,0 +1,21 @@
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import './index.css';
+
+// Mount function for standalone mode
+const mount = () => {
+  const root = ReactDOM.createRoot(document.getElementById('root')!);
+  root.render(
+    <React.StrictMode>
+      <App />
+    </React.StrictMode>
+  );
+};
+
+// If we are in development and in isolation,
+// call mount immediately
+const devRoot = document.getElementById('root');
+if (devRoot) {
+  mount();
+}
