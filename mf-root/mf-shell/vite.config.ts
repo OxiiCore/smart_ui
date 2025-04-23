@@ -1,7 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
-import { rewriteImports } from '@replit/vite-plugin-cartographer';
 import runtimeErrorModal from '@replit/vite-plugin-runtime-error-modal';
 import shadcnThemeJson from '@replit/vite-plugin-shadcn-theme-json';
 
@@ -9,7 +8,6 @@ import shadcnThemeJson from '@replit/vite-plugin-shadcn-theme-json';
 export default defineConfig({
   plugins: [
     react(),
-    rewriteImports,
     runtimeErrorModal(),
     shadcnThemeJson(),
   ],
