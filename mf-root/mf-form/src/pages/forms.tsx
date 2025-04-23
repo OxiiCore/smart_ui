@@ -154,6 +154,20 @@ export default function FormsPage() {
     }
   }, [formsError, fieldsError, toast, t]);
 
+  // Auto-resize effect for iframe integration
+  useEffect(() => {
+    const resizeObserver = new ResizeObserver(() => {
+      window.parent.postMessage({
+        type: 'resize',
+        height: document.body.scrollHeight
+      }, '*');
+    });
+
+    resizeObserver.observe(document.body);
+
+    return () => resizeObserver.disconnect();
+  }, []);
+
   // Filter forms by search term
   const filteredForms = formsData?.filter((form: { name: string }) => 
     form.name.toLowerCase().includes(searchTerm.toLowerCase())
