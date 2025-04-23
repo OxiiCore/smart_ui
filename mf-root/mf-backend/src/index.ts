@@ -1,30 +1,39 @@
-import express, { Request, Response, NextFunction } from 'express';
+import express from 'express';
 import cors from 'cors';
-import { registerRoutes } from './routes';
-import { storage } from './storage';
+import { json, urlencoded } from 'body-parser';
+import formApi from './api/formApi';
+import submissionApi from './api/submissionApi';
+import recordApi from './api/recordApi';
 
-// Create Express app
+// Create Express server
 const app = express();
-const PORT = process.env.PORT || 5005;
+const PORT = process.env.PORT || 3006;
 
 // Middleware
-app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002', 
-           'http://localhost:3003', 'http://localhost:3004'],
-  credentials: true
-}));
-app.use(express.json());
+app.use(cors());
+app.use(json());
+app.use(urlencoded({ extended: true }));
 
-// Register all routes
-registerRoutes(app);
+// API Routes
+app.use('/api/form', formApi);
+app.use('/api/submission', submissionApi);
+app.use('/api/record', recordApi);
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok' });
+});
 
 // Error handling middleware
-app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-  console.error(err.stack);
-  res.status(500).send({ error: err.message || 'Internal Server Error' });
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('Global error handler:', err);
+  res.status(500).json({
+    error: 'Server error',
+    message: err.message || 'An unexpected error occurred',
+  });
 });
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`Backend server running on port ${PORT}`);
+  console.log(`Backend service running on port ${PORT}`);
 });
