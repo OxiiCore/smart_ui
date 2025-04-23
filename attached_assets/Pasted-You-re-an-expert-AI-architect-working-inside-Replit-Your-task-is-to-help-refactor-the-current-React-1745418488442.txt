@@ -1,0 +1,54 @@
+You're an expert AI architect working inside Replit. Your task is to help refactor the current React + Vite + Express monolith app into a scalable Micro Frontend (Micro FE) architecture using Webpack Module Federation.
+
+## Current structure summary:
+- Monolith repo with frontend (React) and backend (Express)
+- Pages: Home, Submission, Record Detail, Form, Workflow
+- UI: Shadcn + Tailwind
+- State: React Query + i18next
+- DB: PostgreSQL via Drizzle ORM
+- Routing: Wouter
+- Shared: schema.ts (Zod), form types
+
+---
+
+## Your task:
+1. **Split the project into Micro Frontends**, one per domain:
+   - `mf-home`: Home page
+   - `mf-submission`: Submission + AddSubmissionDialog
+   - `mf-form`: Form + FormFields
+   - `mf-record`: Record Detail + Workflow Diagram
+   - `mf-shell`: Main shell application that hosts other Micro FEs
+
+2. Each Micro FE must:
+   - Have its own routing config (React + Wouter or switch to React Router)
+   - Expose its pages/components via `remoteEntry.js`
+   - Use shared UI and logic from a shared `mf-ui` or `mf-shared` package
+
+3. The Shell App (`mf-shell`) must:
+   - Load other Micro FE apps dynamically via Webpack Module Federation
+   - Manage cross-app routing
+   - Provide shared layout (e.g., MainSidebar, ThemeSwitcher)
+   - Provide translation, user state, and session management
+
+4. Backend:
+   - Move Express backend into a separate Repl or `mf-backend`
+   - Use shared API interface & types via `mf-shared`
+   - Serve API for each domain separately (modular route structure)
+
+5. Refactor API usage:
+   - Remove API logic from UI components
+   - Create `services/` in each Micro FE to handle API logic
+
+6. Bonus:
+   - Add `README.md` in each Micro FE
+   - Setup `.replit` with port forwarding (e.g., 3000 shell, 3001~3004 micro apps)
+   - Enable Module Federation with shared config
+
+## Output format:
+- List updated folder structures
+- Provide new webpack.config.js for each micro FE and shell
+- Show example of dynamic routing + integration
+- Suggest `vite.config.ts` if staying with Vite (or migrate to Webpack 5)
+- Provide example imports from remotes
+
+Please generate the initial setup, configs, and architecture diagram if possible.
