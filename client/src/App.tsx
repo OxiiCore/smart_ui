@@ -1,4 +1,4 @@
-import { Switch, Route, useRoute } from "wouter";
+import { Switch, Route, useRoute, RouteComponentProps } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -15,6 +15,15 @@ import NotFound from "@/pages/not-found";
 import { useEffect } from "react";
 import { setupInitialTheme } from "@/lib/theme";
 import { MobileSidebarProvider } from "@/hooks/use-mobile-sidebar";
+
+// Wrapper components for all route components
+const FormsPageWrapper = (_props: RouteComponentProps) => <FormsPage />;
+const HomeWrapper = (_props: RouteComponentProps) => <Home />;
+const WorkflowPageWrapper = (_props: RouteComponentProps) => <WorkflowPage />;
+const SubmissionPageWrapper = (_props: RouteComponentProps) => <SubmissionPage />;
+const DesignExamplePageWrapper = (_props: RouteComponentProps) => <DesignExamplePage />;
+const RecordDetailPageWrapper = (_props: RouteComponentProps) => <RecordDetailPage />;
+const NotFoundWrapper = (_props: RouteComponentProps) => <NotFound />;
 
 // Hàm kiểm tra xem có đang ở trang StandaloneForm không
 function useIsStandaloneForm() {
@@ -34,17 +43,16 @@ function Router() {
   // Ngược lại, hiển thị router bình thường với layout đầy đủ
   return (
     <Switch>
-      <Route path="/" component={Home} />
-      <Route path="/forms" component={FormsPage} />
-      <Route path="/form/:id" component={StandaloneFormPage} />
-      <Route path="/workflow" component={WorkflowPage} />
-      <Route path="/menu/:menuId" component={WorkflowPage} />
-      <Route path="/menu/:menuId/submenu/:subMenuId" component={WorkflowPage} />
-      <Route path="/submission/:workflowId" component={SubmissionPage} />
-      <Route path="/record/:menuId/:recordId" component={RecordDetailPage} />
-      <Route path="/record/:menuId/:recordId/workflow/:workflowId" component={RecordDetailPage} />
-      <Route path="/design" component={DesignExamplePage} />
-      <Route component={NotFound} />
+      <Route path="/" component={HomeWrapper} />
+      <Route path="/forms" component={FormsPageWrapper} />
+      <Route path="/workflow" component={WorkflowPageWrapper} />
+      <Route path="/menu/:menuId" component={WorkflowPageWrapper} />
+      <Route path="/menu/:menuId/submenu/:subMenuId" component={WorkflowPageWrapper} />
+      <Route path="/submission/:workflowId" component={SubmissionPageWrapper} />
+      <Route path="/record/:menuId/:recordId" component={RecordDetailPageWrapper} />
+      <Route path="/record/:menuId/:recordId/workflow/:workflowId" component={RecordDetailPageWrapper} />
+      <Route path="/design" component={DesignExamplePageWrapper} />
+      <Route component={NotFoundWrapper} />
     </Switch>
   );
 }
