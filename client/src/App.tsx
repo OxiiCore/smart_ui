@@ -14,7 +14,6 @@ import NotFound from "@/pages/not-found";
 import { useEffect } from "react";
 import { setupInitialTheme } from "@/lib/theme";
 import { MobileSidebarProvider } from "@/hooks/use-mobile-sidebar";
-import FormDetail from "./pages/form-detail"; // Added import
 
 function Router() {
   return (
@@ -28,7 +27,6 @@ function Router() {
       <Route path="/record/:menuId/:recordId" component={RecordDetailPage} />
       <Route path="/record/:menuId/:recordId/workflow/:workflowId" component={RecordDetailPage} />
       <Route path="/design" component={DesignExamplePage} />
-      <Route path="/form/:formId" component={FormDetail} /> {/* Added form ID route */}
       <Route component={NotFound} />
     </Switch>
   );
