@@ -16,7 +16,12 @@ import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useTranslation } from 'react-i18next';
 
-export default function FormsPage() {
+interface FormsPageProps {
+  standaloneMode?: boolean;
+  initialFormId?: string;
+}
+
+export default function FormsPage({ standaloneMode = false, initialFormId }: FormsPageProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFormId, setSelectedFormId] = useState<string | null>(null);
   const [showFormList, setShowFormList] = useState(true);
@@ -128,12 +133,17 @@ export default function FormsPage() {
   const localFieldsData = selectedFormId ? getLocalFields(selectedFormId).map((item: any) => item.core_dynamic_field) : [];
   const fieldsData = [...apiFieldsData, ...localFieldsData];
 
-  // Set the first form as selected when data loads
+  // Set the form based on initialFormId or set the first form as selected when data loads
   useEffect(() => {
-    if (formsData && formsData.length > 0 && !selectedFormId) {
+    if (initialFormId) {
+      setSelectedFormId(initialFormId);
+      if (isMobile) {
+        setShowFormList(false);
+      }
+    } else if (formsData && formsData.length > 0 && !selectedFormId) {
       setSelectedFormId(formsData[0].id);
     }
-  }, [formsData, selectedFormId]);
+  }, [formsData, selectedFormId, initialFormId, isMobile]);
 
   // Show error toast if data fetching fails
   useEffect(() => {
@@ -335,273 +345,322 @@ export default function FormsPage() {
 
   return (
     <FormLayout>
-      {/* Add Field Dialog */}
-      <Dialog open={showAddFieldDialog} onOpenChange={setShowAddFieldDialog}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>{t('form.addField', 'Thêm trường vào form')}</DialogTitle>
-          </DialogHeader>
-          
-          <div className="max-h-[50vh] overflow-y-auto py-4">
-            {availableFields.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                {isAddingFields ? (
-                  <div className="flex flex-col items-center">
-                    <svg className="animate-spin h-8 w-8 text-primary mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                    </svg>
-                    <p>{t('common.loading', 'Đang tải...')}</p>
+      {/* Nếu ở chế độ standalone, chỉ hiển thị form fields */}
+      {standaloneMode ? (
+        <div className="mt-6">
+          {selectedFormId && fieldsData ? (
+            <FormFields 
+              formId={selectedFormId} 
+              fields={fieldsData} 
+              formFields={formData?.formFields || []}
+              onFieldsChange={refetchFields}
+            />
+          ) : (
+            <div className="text-center py-12">
+              <div className="text-lg text-red-500">
+                {t('form.formNotFound', 'Không tìm thấy form')}
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <>
+          {/* Form Management UI */}
+          <Dialog open={showAddFieldDialog} onOpenChange={setShowAddFieldDialog}>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>{t('form.addField', 'Thêm trường vào form')}</DialogTitle>
+              </DialogHeader>
+              
+              <div className="max-h-[50vh] overflow-y-auto py-4">
+                {availableFields.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    {isAddingFields ? (
+                      <div className="flex flex-col items-center">
+                        <svg className="animate-spin h-8 w-8 text-primary mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                        </svg>
+                        <p>{t('common.loading', 'Đang tải...')}</p>
+                      </div>
+                    ) : (
+                      t('form.noFieldsAvailable', 'Không có trường nào có sẵn để thêm vào form này')
+                    )}
                   </div>
                 ) : (
-                  t('form.noFieldsAvailable', 'Không có trường nào có sẵn để thêm vào form này')
-                )}
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {availableFields.map((field) => (
-                  <div 
-                    key={field.id} 
-                    className="flex items-start space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50"
-                  >
-                    <Checkbox 
-                      id={`field-${field.id}`} 
-                      checked={selectedFields.includes(field.id)}
-                      onCheckedChange={() => toggleFieldSelection(field.id)}
-                    />
-                    <div className="flex-1">
-                      <label 
-                        htmlFor={`field-${field.id}`}
-                        className="text-sm font-medium flex items-center cursor-pointer"
+                  <div className="space-y-3">
+                    {availableFields.map((field) => (
+                      <div 
+                        key={field.id} 
+                        className="flex items-start space-x-3 p-3 rounded-lg border border-gray-200 hover:bg-gray-50"
                       >
-                        {field.name}
-                        <Badge className="ml-2" variant="outline">
-                          {field.field_type}
-                        </Badge>
-                      </label>
-                      {field.description && (
-                        <p className="text-xs text-gray-500 mt-1">{field.description}</p>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-          
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowAddFieldDialog(false)}
-              disabled={isAddingFields}
-            >
-              {t('common.cancel', 'Hủy')}
-            </Button>
-            <Button
-              onClick={handleAddFieldsToForm}
-              disabled={selectedFields.length === 0 || isAddingFields}
-            >
-              {isAddingFields ? (
-                <>
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
-                  </svg>
-                  {t('form.adding', 'Đang thêm...')}
-                </>
-              ) : (
-                <>{t('form.addCount', 'Thêm {{count}} trường', { count: selectedFields.length })}</>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <div className="grid grid-cols-1 gap-8 md:grid-cols-12">
-        {/* Forms List - hidden on mobile when a form is selected */}
-        {(!isMobile || (isMobile && showFormList)) && (
-          <div className="md:col-span-4 lg:col-span-3">
-            <Card>
-              <CardHeader className="px-4 py-5 border-b border-gray-200 bg-gray-50">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-medium text-gray-900">{t('form.formsList', 'Danh sách Form')}</h2>
-                  <button 
-                    type="button" 
-                    className="inline-flex items-center p-1.5 border border-transparent rounded-full shadow-sm text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <line x1="12" y1="5" x2="12" y2="19"></line>
-                      <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                  </button>
-                </div>
-                <div className="mt-3">
-                  <div className="relative rounded-md shadow-sm">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                      </svg>
-                    </div>
-                    <Input
-                      type="text"
-                      className="pl-10"
-                      placeholder={t('common.search', 'Tìm kiếm...')}
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                {isLoadingForms ? (
-                  <div className="p-4 space-y-3">
-                    {[1, 2, 3].map((i) => (
-                      <div key={i} className="flex flex-col space-y-2">
-                        <Skeleton className="h-5 w-3/4" />
-                        <Skeleton className="h-4 w-1/4" />
+                        <Checkbox 
+                          id={`field-${field.id}`} 
+                          checked={selectedFields.includes(field.id)}
+                          onCheckedChange={() => toggleFieldSelection(field.id)}
+                        />
+                        <div className="flex-1">
+                          <label 
+                            htmlFor={`field-${field.id}`}
+                            className="text-sm font-medium flex items-center cursor-pointer"
+                          >
+                            {field.name}
+                            <Badge className="ml-2" variant="outline">
+                              {field.field_type}
+                            </Badge>
+                          </label>
+                          {field.description && (
+                            <p className="text-xs text-gray-500 mt-1">{field.description}</p>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
-                ) : filteredForms && filteredForms.length > 0 ? (
-                  <ul className="divide-y divide-gray-200">
-                    {filteredForms.map((form: { id: string; name: string; status: string }) => (
-                      <li
-                        key={form.id}
-                        className={`px-4 py-3 hover:bg-gray-50 cursor-pointer ${
-                          selectedFormId === form.id ? 'bg-primary/10 border-l-4 border-primary' : ''
-                        }`}
-                        onClick={() => handleSelectFormOnMobile(form.id)}
+                )}
+              </div>
+              
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowAddFieldDialog(false)}
+                  disabled={isAddingFields}
+                >
+                  {t('common.cancel', 'Hủy')}
+                </Button>
+                <Button
+                  onClick={handleAddFieldsToForm}
+                  disabled={selectedFields.length === 0 || isAddingFields}
+                >
+                  {isAddingFields ? (
+                    <>
+                      <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                      </svg>
+                      {t('form.adding', 'Đang thêm...')}
+                    </>
+                  ) : (
+                    <>{t('form.addCount', 'Thêm {{count}} trường', { count: selectedFields.length })}</>
+                  )}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-12">
+            {/* Forms List - hidden on mobile when a form is selected */}
+            {(!isMobile || (isMobile && showFormList)) && (
+              <div className="md:col-span-4 lg:col-span-3">
+                <Card>
+                  <CardHeader className="px-4 py-5 border-b border-gray-200 bg-gray-50">
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-lg font-medium text-gray-900">{t('form.formsList', 'Danh sách Form')}</h2>
+                      <button 
+                        type="button" 
+                        className="inline-flex items-center p-1.5 border border-transparent rounded-full shadow-sm text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
                       >
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <h3 className="text-sm font-medium text-gray-900">{form.name}</h3>
-                            <div className="mt-1">
-                              <Badge variant="status">
-                                {form.status}
-                              </Badge>
-                            </div>
-                          </div>
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="12" y1="5" x2="12" y2="19"></line>
+                          <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                      </button>
+                    </div>
+                    <div className="mt-3">
+                      <div className="relative rounded-md shadow-sm">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="9 18 15 12 9 6"></polyline>
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                           </svg>
                         </div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <div className="p-4 text-center text-gray-500">
-                    {searchTerm ? t('form.noMatchingForms', 'Không tìm thấy form phù hợp') : t('form.noForms', 'Không có form nào')}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* Form Detail - show on mobile only when a form is selected */}
-        {(!isMobile || (isMobile && !showFormList)) && (
-          <div className={isMobile ? "col-span-1" : "md:col-span-8 lg:col-span-9"}>
-            <Card>
-              <CardHeader className="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200">
-                <div className="flex items-center justify-between">
-                  {isMobile && (
-                    <Button 
-                      variant="ghost" 
-                      className="mr-2" 
-                      onClick={handleBackToList}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <polyline points="15 18 9 12 15 6"></polyline>
-                      </svg>
-                      {t('common.back', 'Quay lại')}
-                    </Button>
-                  )}
-                  <h2 className="text-lg font-medium text-gray-900">
+                        <Input
+                          type="text"
+                          className="pl-10"
+                          placeholder={t('common.search', 'Tìm kiếm...')}
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-0">
                     {isLoadingForms ? (
-                      <Skeleton className="h-6 w-48" />
-                    ) : selectedForm ? (
-                      selectedForm.name
+                      <div className="p-4 space-y-3">
+                        {[1, 2, 3].map((i) => (
+                          <div key={i} className="flex flex-col space-y-2">
+                            <Skeleton className="h-5 w-3/4" />
+                            <Skeleton className="h-4 w-1/4" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : filteredForms && filteredForms.length > 0 ? (
+                      <ul className="divide-y divide-gray-200">
+                        {filteredForms.map((form: { id: string; name: string; status: string }) => (
+                          <li
+                            key={form.id}
+                            className={`px-4 py-3 hover:bg-gray-50 cursor-pointer ${
+                              selectedFormId === form.id ? 'bg-primary/10 border-l-4 border-primary' : ''
+                            }`}
+                            onClick={() => handleSelectFormOnMobile(form.id)}
+                          >
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h3 className="text-sm font-medium text-gray-900">{form.name}</h3>
+                                <div className="mt-1">
+                                  <Badge variant="status">
+                                    {form.status}
+                                  </Badge>
+                                </div>
+                              </div>
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                              </svg>
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
                     ) : (
-                      t('form.selectForm', 'Chọn một form')
+                      <div className="p-4 text-center text-gray-500">
+                        {searchTerm ? t('form.noMatchingForms', 'Không tìm thấy form phù hợp') : t('form.noForms', 'Không có form nào')}
+                      </div>
                     )}
-                  </h2>
-                  <div className="flex space-x-2">
+                  </CardContent>
+                </Card>
+              </div>
+            )}
+
+            {/* Form Detail - show on mobile only when a form is selected */}
+            {(!isMobile || (isMobile && !showFormList)) && (
+              <div className={isMobile ? "col-span-1" : "md:col-span-8 lg:col-span-9"}>
+                <Card>
+                  <CardHeader className="px-4 py-5 sm:px-6 bg-gray-50 border-b border-gray-200">
+                    <div className="flex items-center justify-between">
+                      {isMobile && (
+                        <Button 
+                          variant="ghost" 
+                          className="mr-2" 
+                          onClick={handleBackToList}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                          </svg>
+                          {t('common.back', 'Quay lại')}
+                        </Button>
+                      )}
+                      <h2 className="text-lg font-medium text-gray-900">
+                        {isLoadingForms ? (
+                          <Skeleton className="h-6 w-48" />
+                        ) : selectedForm ? (
+                          selectedForm.name
+                        ) : (
+                          t('form.selectForm', 'Chọn một form')
+                        )}
+                      </h2>
+                      <div className="flex space-x-2">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="hidden sm:flex items-center"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                          </svg>
+                          {t('common.edit', 'Chỉnh sửa')}
+                        </Button>
+                        
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="hidden sm:flex items-center"
+                          onClick={handleOpenAddFieldDialog}
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                          </svg>
+                          {t('common.add', 'Thêm')}
+                        </Button>
+                      </div>
+                    </div>
+                    {isLoadingForms ? (
+                      <div className="mt-1 text-sm h-4"><Skeleton className="h-4 w-full" /></div>
+                    ) : (
+                      <p className="mt-1 text-sm text-gray-500">
+                        {selectedForm ? (
+                          selectedForm.description || t('form.clickFieldsToFill', 'Nhấn vào các trường để điền thông tin')
+                        ) : (
+                          t('form.pleaseSelectForm', 'Vui lòng chọn một form từ danh sách')
+                        )}
+                      </p>
+                    )}
+                  </CardHeader>
+                  <CardContent className="p-4 sm:p-6">
+                    {isLoadingFields ? (
+                      <div className="space-y-6">
+                        {[1, 2, 3, 4].map((i) => (
+                          <div key={i} className="p-4 border border-gray-200 rounded-lg">
+                            <div className="flex justify-between mb-2">
+                              <Skeleton className="h-4 w-1/3" />
+                              <Skeleton className="h-4 w-20" />
+                            </div>
+                            <Skeleton className="h-10 w-full mt-2" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : selectedFormId && fieldsData ? (
+                      <FormFields 
+                        formId={selectedFormId} 
+                        fields={fieldsData} 
+                        formFields={formData?.formFields || []}
+                        onFieldsChange={refetchFields}
+                      />
+                    ) : (
+                      <div className="text-center py-12">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400 mx-auto mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                          <polyline points="14 2 14 8 20 8"></polyline>
+                          <line x1="16" y1="13" x2="8" y2="13"></line>
+                          <line x1="16" y1="17" x2="8" y2="17"></line>
+                          <polyline points="10 9 9 9 8 9"></polyline>
+                        </svg>
+                        <p className="text-gray-500">
+                          {t('form.noFormSelected', 'Chọn một form để xem chi tiết và điền thông tin')}
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Mobile Actions */}
+                {isMobile && selectedFormId && (
+                  <div className="mt-4 flex space-x-3">
                     <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="hidden sm:flex items-center"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                      </svg>
-                      {t('common.edit', 'Chỉnh sửa')}
-                    </Button>
-                    
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="hidden sm:flex items-center"
+                      className="flex-1"
+                      variant="outline"
                       onClick={handleOpenAddFieldDialog}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
                       </svg>
-                      {t('common.add', 'Thêm')}
+                      {t('form.addFields', 'Thêm trường')}
+                    </Button>
+                    <Button className="flex-1">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                        <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                        <polyline points="7 3 7 8 15 8"></polyline>
+                      </svg>
+                      {t('form.saveForm', 'Lưu form')}
                     </Button>
                   </div>
-                </div>
-                {isLoadingForms ? (
-                  <div className="mt-1 text-sm h-4"><Skeleton className="h-4 w-full" /></div>
-                ) : (
-                  <p className="mt-1 text-sm text-gray-500">
-                    {selectedForm ? (
-                      selectedForm.description || t('form.clickFieldsToFill', 'Nhấn vào các trường để điền thông tin')
-                    ) : (
-                      t('form.pleaseSelectForm', 'Vui lòng chọn một form từ danh sách')
-                    )}
-                  </p>
                 )}
-              </CardHeader>
-              <CardContent className="p-4 sm:p-6">
-                {isLoadingFields ? (
-                  <div className="space-y-6">
-                    {[1, 2, 3, 4].map((i) => (
-                      <div key={i} className="p-4 border border-gray-200 rounded-lg">
-                        <div className="flex justify-between mb-2">
-                          <Skeleton className="h-4 w-1/3" />
-                          <Skeleton className="h-4 w-20" />
-                        </div>
-                        <Skeleton className="h-10 w-full mt-2" />
-                      </div>
-                    ))}
-                  </div>
-                ) : selectedFormId && fieldsData ? (
-                  <FormFields 
-                    formId={selectedFormId} 
-                    fields={fieldsData} 
-                    formFields={formData?.formFields || []}
-                    onFieldsChange={refetchFields}
-                  />
-                ) : (
-                  <div className="text-center py-12">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-gray-400 mx-auto mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                      <polyline points="14 2 14 8 20 8"></polyline>
-                      <line x1="16" y1="13" x2="8" y2="13"></line>
-                      <line x1="16" y1="17" x2="8" y2="17"></line>
-                      <polyline points="10 9 9 9 8 9"></polyline>
-                    </svg>
-                    <p className="text-gray-500">{t('form.selectFormToViewDetails', 'Vui lòng chọn một form để xem chi tiết')}</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+              </div>
+            )}
           </div>
-        )}
-      </div>
+        </>
+      )}
     </FormLayout>
   );
 }
